@@ -1,0 +1,391 @@
+# ============================================================
+# ONLINE RETAIL DATA ANALYSIS PROJECT
+# Tools: Python, Pandas, NumPy
+# Dataset: Online_Retail.xlsx
+# ============================================================
+
+
+# ============================================================
+# STEP 1: IMPORT LIBRARIES AND LOAD DATA
+# ============================================================
+
+import pandas as pd
+import numpy as np
+
+# Load the Excel dataset into a Pandas DataFrame
+df = pd.read_excel("online_retail.xlsx")
+
+# Display the first five rows
+print("\n--- FIRST FIVE ROWS ---")
+print(df)
+print(df.head())
+
+
+# ============================================================
+# STEP 2: EXPLORE THE DATASET
+# ============================================================
+
+# Check the number of rows and columns
+print("\n--- DATASET SHAPE ---")
+print(df.shape)
+#
+# Display column names
+print("\n--- COLUMN NAMES ---")
+print(df.columns)
+
+# Display column data types
+print("\n--- DATA TYPES ---")
+print(df.dtypes)
+
+# Display dataset information
+print("\n--- DATASET INFORMATION ---")
+df.info()
+
+
+# ============================================================
+# STEP 3: INVESTIGATE MISSING VALUES
+# ============================================================
+
+# Count missing values in every column
+print("\n--- MISSING VALUES ---")
+print(df.isnull().sum())
+
+# Select rows with known customer IDs
+customer_data = df[df["CustomerID"].notnull()]
+print("\n --customers whose id is not null--")
+print(customer_data)
+
+print("\n--- ROWS WITH CUSTOMER IDs ---")
+print(customer_data.shape)
+
+# Select rows with available product descriptions
+product_data = df[df["Description"].notnull()]
+
+print("\n--- ROWS WITH PRODUCT DESCRIPTIONS ---")
+print(product_data.shape)
+
+
+# ============================================================
+# STEP 4: INVESTIGATE DUPLICATE RECORDS
+# ============================================================
+
+# Count duplicate rows
+print("\n--- NUMBER OF DUPLICATE ROWS ---")
+print(df.duplicated().sum())
+
+# Store duplicate rows for investigation
+duplicates = df[df.duplicated()]
+print(df.duplicated())
+
+print("\n--- FIRST FIVE DUPLICATE ROWS ---")
+print(duplicates.head())
+
+
+# ============================================================
+# STEP 5: INVESTIGATE CANCELLED TRANSACTIONS
+# ============================================================
+
+# Identify invoice numbers beginning with C
+cancellations = (
+    df["InvoiceNo"]
+    .astype(str)
+    .str.startswith("C")
+)
+
+# Count cancellation-related rows
+print("\n--- CANCELLATION-RELATED ROWS ---")
+print(cancellations.sum())
+
+# Store cancellation-related rows
+cancelled_data = df[cancellations]
+
+print("\n--- FIRST FIVE CANCELLATION-RELATED ROWS ---")
+print(cancelled_data.head())
+
+
+# ============================================================
+# STEP 6: INVESTIGATE UNUSUAL QUANTITIES AND PRICES
+# ============================================================
+
+# Count rows with zero or negative quantities
+print("\n--- NON-POSITIVE QUANTITIES ---")
+print((df["Quantity"] <= 0).sum())
+
+# View those records
+unusual_quantity = df[df["Quantity"] <= 0]
+
+print("\n--- FIRST FIVE UNUSUAL QUANTITY ROWS ---")
+print(unusual_quantity.head())
+
+
+# Count rows with zero or negative prices
+print("\n--- NON-POSITIVE UNIT PRICES ---")
+print((df["UnitPrice"] <= 0).sum())
+
+# View those records
+unusual_price = df[df["UnitPrice"] <= 0]
+
+print("\n--- FIRST FIVE UNUSUAL PRICE ROWS ---")
+print(unusual_price.head())
+
+
+# ============================================================
+# STEP 7: CONVERT PANDAS COLUMNS INTO NUMPY ARRAYS
+# ============================================================
+
+# Select Quantity and convert it into a NumPy array
+quantity = df["Quantity"].to_numpy()
+
+# Select UnitPrice and convert it into a NumPy array
+unit_price = df["UnitPrice"].to_numpy()
+
+# Multiply corresponding array elements
+line_revenue = quantity * unit_price
+
+# Store the calculated values in a new DataFrame column
+df["LineRevenue"] = line_revenue
+
+print("\n--- REVENUE CALCULATION ---")
+print(df[["Quantity", "UnitPrice", "LineRevenue"]].head())
+
+
+# ============================================================
+# STEP 8: PRACTISE NUMPY CALCULATIONS
+# ============================================================
+# These calculations use the original, uncleaned transactions.
+# They are numerical practice, not final sales figures.
+
+total_raw_revenue = np.sum(line_revenue)
+
+highest_raw_revenue = np.max(line_revenue)
+
+lowest_raw_revenue = np.min(line_revenue)
+
+average_raw_revenue = np.mean(line_revenue)
+
+print("\n--- PRELIMINARY NUMPY STATISTICS ---")
+print("Raw total line revenue:", round(total_raw_revenue, 2))
+print("Highest line revenue:", round(highest_raw_revenue, 2))
+print("Lowest line revenue:", round(lowest_raw_revenue, 2))
+print("Average line revenue:", round(average_raw_revenue, 2))
+
+
+# ============================================================
+# STEP 9: PRACTISE FILTERING DATA
+# ============================================================
+
+# Find rows with line revenue greater than 100
+high_revenue_rows = df[df["LineRevenue"] > 100]
+
+print("\n--- LINE REVENUE GREATER THAN 100 ---")
+print(high_revenue_rows.head())
+
+
+# Find transactions where quantity exceeds 20
+quantity_over_20 = df[df["Quantity"] > 20]
+
+print("\n--- QUANTITY GREATER THAN 20 ---")
+print(quantity_over_20.head())
+
+
+# Find transactions with unit price greater than 5
+expensive_items = df[df["UnitPrice"] > 5]
+
+print("\n--- UNIT PRICE GREATER THAN 5 ---")
+print(expensive_items.head())
+
+
+# Find rows satisfying two conditions
+high_quantity_expensive = df[
+    (df["Quantity"] > 20) &
+    (df["UnitPrice"] > 5)
+]
+
+print("\n--- HIGH QUANTITY AND UNIT PRICE ---")
+print(high_quantity_expensive.head())
+
+
+# ============================================================
+# STEP 10: CREATE A SEPARATE CLEANING DATAFRAME
+# ============================================================
+
+# Copy the original DataFrame
+clean_df = df.copy()
+
+# Remove exact duplicate rows
+clean_df = clean_df.drop_duplicates()
+
+# Exclude invoice numbers beginning with C
+# for the initial sales analysis
+clean_df = clean_df[
+    ~clean_df["InvoiceNo"]
+    .astype(str)
+    .str.startswith("C")
+]
+
+# Keep rows with positive quantities and positive unit prices
+clean_df = clean_df[
+    (clean_df["Quantity"] > 0) &
+    (clean_df["UnitPrice"] > 0)
+]
+
+# Recalculate revenue for the retained transactions
+clean_df["LineRevenue"] = (
+    clean_df["Quantity"] *
+    clean_df["UnitPrice"]
+)
+
+print("\n--- CLEANED DATASET SHAPE ---")
+print(clean_df.shape)
+
+print("\n--- FIRST FIVE CLEANED ROWS ---")
+print(clean_df.head())
+
+
+# ============================================================
+# STEP 11: FIND THE TOP 10 PRODUCTS BY REVENUE
+# ============================================================
+
+# Group transactions by product description
+# and calculate revenue for each product
+
+product_revenue = clean_df.groupby(
+    "Description"
+)["LineRevenue"].sum()
+
+# Sort revenue from highest to lowest
+# and select the top 10 products
+
+top_10_products = product_revenue.sort_values(
+    ascending=False
+).head(10)
+
+print("\n--- TOP 10 PRODUCTS BY REVENUE ---")
+print(top_10_products)
+
+
+# ============================================================
+# STEP 12: FIND THE TOP 10 COUNTRIES BY REVENUE
+# ============================================================
+
+# Group transactions by country and calculate revenue
+country_revenue = clean_df.groupby(
+    "Country"
+)["LineRevenue"].sum()
+
+# Sort revenue from highest to lowest
+top_10_countries = country_revenue.sort_values(
+    ascending=False
+).head(10)
+
+print("\n--- TOP 10 COUNTRIES BY REVENUE ---")
+print(top_10_countries)
+
+
+# ============================================================
+# STEP 13: ANALYSE MONTHLY REVENUE
+# ============================================================
+
+# Convert InvoiceDate into a proper datetime format
+clean_df["InvoiceDate"] = pd.to_datetime(
+    clean_df["InvoiceDate"],
+    errors="coerce"
+)
+
+# Use records with valid dates for monthly analysis
+monthly_data = clean_df[
+    clean_df["InvoiceDate"].notnull()
+].copy()
+
+# Extract the year and month from each invoice date
+monthly_data["Month"] = (
+    monthly_data["InvoiceDate"].dt.to_period("M")
+)
+
+# Group transactions by month and calculate revenue
+monthly_revenue = monthly_data.groupby(
+    "Month"
+)["LineRevenue"].sum()
+
+print("\n--- MONTHLY REVENUE ---")
+print(monthly_revenue)
+print("\n--ACCESSING THE COLUMN MONTH--")
+print(monthly_data["Month"])
+
+# Identify the month with the highest revenue
+if not monthly_revenue.empty:
+
+    best_month = monthly_revenue.idxmax()
+
+    highest_monthly_revenue = monthly_revenue.max()
+
+    print("\n--- HIGHEST REVENUE MONTH ---")
+    print("Month:", best_month)
+    print(
+        "Revenue:",
+        round(highest_monthly_revenue, 2)
+    )
+
+
+# ============================================================
+# STEP 14: CALCULATE OVERALL BUSINESS METRICS
+# ============================================================
+
+# Convert numerical columns to NumPy arrays
+clean_quantity = clean_df["Quantity"].to_numpy()
+
+clean_revenue = clean_df["LineRevenue"].to_numpy()
+
+# Calculate total revenue for retained transaction lines
+total_revenue = np.sum(clean_revenue)
+
+# Calculate total quantity sold
+total_quantity = np.sum(clean_quantity)
+
+# Calculate average revenue per retained transaction line
+average_line_revenue = np.mean(clean_revenue)
+
+# Count unique product stock codes
+unique_products = clean_df["StockCode"].nunique()
+
+# Count unique countries
+unique_countries = clean_df["Country"].nunique()
+
+# Count unique invoice numbers in the cleaned dataset
+unique_invoices = clean_df["InvoiceNo"].nunique()
+
+print("\n--- OVERALL BUSINESS METRICS ---")
+
+print("Total revenue:", round(total_revenue, 2))
+
+print("Total quantity sold:", total_quantity)
+
+print(
+    "Average transaction-line revenue:",
+    round(average_line_revenue, 2)
+)
+
+print("Unique products:", unique_products)
+
+print("Unique countries:", unique_countries)
+
+print("Unique invoices:", unique_invoices)
+
+
+# ============================================================
+# STEP 15: SUMMARISE THE ANALYSIS
+# ============================================================
+
+print("\n--- PROJECT SUMMARY ---")
+
+print("Original dataset rows:", len(df))
+
+print("Cleaned dataset rows:", len(clean_df))
+
+print("Product groups analysed:", len(product_revenue))
+
+print("Countries analysed:", len(country_revenue))
+
+print("Months analysed:", len(monthly_revenue))
+
+print("\nOnline Retail analysis completed.")
